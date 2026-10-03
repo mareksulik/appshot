@@ -35,6 +35,7 @@ let paths = { base: '', bin: '', shots: '', src: '' }
 let listener: { return?: () => unknown } | null = null
 let generation = 0
 let claimTimer: { cancel: () => void } | null = null
+let isStarted = false
 
 async function destination($: EngineInterface): Promise<Destination> {
   return (await $.store.get('destination')) === 'send' ? 'send' : 'attach'
@@ -61,6 +62,14 @@ async function resolvePaths($: EngineInterface) {
 // open sessions read the same file and stand aside).
 async function markActive($: EngineInterface) {
   await $.fs.write(`${paths.base}/active`, await $.session.id()).catch(() => {})
+}
+
+// The desktop app detaches a session when you switch away from it. Clearing
+// the mark then sends appshots taken on a "New session" screen to the newest
+// session, from where the new session takes them over at its first message.
+async function unmarkActive($: EngineInterface) {
+  const active = await $.fs.read(`${paths.base}/active`).catch(() => '')
+  if (active.trim() === (await $.session.id())) await $.fs.write(`${paths.base}/active`, '').catch(() => {})
 }
 
 // Compiles the Swift helper when it is missing or older than its source.
@@ -210,6 +219,24 @@ async function forgetClaimed($: EngineInterface) {
   if (kept.length !== shots.length) await update($, pending, () => kept)
 }
 
+// Sets the mod up once per load. /reload-plugins loads the module again
+// without a new session.start, so every entry point calls this.
+async function ensureStarted($: EngineInterface) {
+  if (isStarted) return
+  isStarted = true
+  await resolvePaths($)
+  await $.command.register({
+    name: 'appshot',
+    description: 'Send Claude the window behind Claude Code (⌘+⌘ works from any app)',
+    argumentHint: '[attach|send|sound <name>|clear|permissions|restart|status]',
+    immediate: true,
+  })
+  await claimRecent($)
+  claimTimer?.cancel()
+  claimTimer = $.clock.every(1500, () => forgetClaimed($))
+  void startListener($)
+}
+
 async function onAppshot($: EngineInterface, shot: Appshot) {
   if (!shot.image && !shot.text) {
     $.ui.toast(`Appshot of ${shot.app} came back empty: run /appshot permissions`)
@@ -269,18 +296,21 @@ async function startListener($: EngineInterface) {
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await resolvePaths($)
-    await $.command.register({
-      name: 'appshot',
-      description: 'Send Claude the window behind Claude Code (⌘+⌘ works from any app)',
-      argumentHint: '[attach|send|sound <name>|clear|permissions|restart|status]',
-      immediate: true,
-    })
+    await ensureStarted($)
     await markActive($)
-    await claimRecent($)
-    claimTimer?.cancel()
-    claimTimer = $.clock.every(1500, () => forgetClaimed($))
-    void startListener($)
+    return next(e)
+  })
+
+  // The desktop app attaches the session you open and detaches the one you
+  // leave: the session on screen is the one appshots go to.
+  on('session.attach', async ($, e, next) => {
+    await ensureStarted($)
+    if (e.surface === 'desktop') await markActive($)
+    return next(e)
+  })
+
+  on('session.detach', async ($, e, next) => {
+    if (isStarted && e.surface === 'desktop') await unmarkActive($)
     return next(e)
   })
 
@@ -288,10 +318,12 @@ export const register: Register = on => {
     generation += 1
     listener?.return?.()
     claimTimer?.cancel()
+    isStarted = false
     return next(e)
   })
 
   on('prompt.submit', async ($, e, next) => {
+    await ensureStarted($)
     await markActive($)
     const shots = await read($, pending)
     if (shots.length === 0) return next(e)
@@ -356,6 +388,7 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    if (!isStarted) void ensureStarted($)
     const shots = await read($, pending)
     if (shots.length === 0 || e.props.hasSurvey) return next(e)
 

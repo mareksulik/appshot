@@ -1,6 +1,6 @@
 {
   "name": "appshot",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Press both ⌘ keys to give Claude the window you're looking at: a screenshot plus its text, including text scrolled offscreen (macOS)",
   "author": {
     "name": "Marek Sulik",

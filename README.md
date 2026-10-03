@@ -20,7 +20,7 @@ appshot is a Claude Code mod: it runs in the Claude Code terminal and in the Cod
 | `/appshot restart` | Restart the hotkey listener |
 | `/appshot status` | Show settings and listener state |
 
-With several Claude Code sessions open, an appshot goes to the session you used last. A brand-new session takes over appshots made in the last five minutes that were not sent yet, because the desktop app starts a session's process only with its first message.
+With several Claude Code sessions open, an appshot goes to the session you have open in the desktop app, or in the terminal to the session you used last. A brand-new session takes over appshots made in the last five minutes that were not sent yet, because the desktop app starts a session's process only with its first message.
 
 ## Requirements and permissions
 
@@ -50,6 +50,7 @@ The window text and screenshot can contain anything that window shows, including
 **Events it hooks** (`hooks/register.tsx`):
 
 - `session.start`: registers `/appshot`, marks the session active, takes over recent unsent appshots in a brand-new session, starts the helper.
+- `session.attach`, `session.detach`: the desktop app attaches the session you open and detaches the one you leave; the mod marks the open session as the one to receive appshots.
 - `session.end`: stops the helper.
 - `prompt.submit`: marks the session active and adds the pending appshots to the prompt as context (the `<appshot>` block described above). It does not change the text you typed.
 - `command.run`: answers `/appshot` and its subcommands.
