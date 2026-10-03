@@ -27,6 +27,10 @@ With several Claude Code sessions open, an appshot goes to the session you used 
 - macOS with the Xcode Command Line Tools (`xcode-select --install`), which provide `swiftc`.
 - In **System Settings › Privacy & Security**, allow the app that runs Claude Code (Claude, Terminal, iTerm…) under **Accessibility** (window text), **Screen Recording** (screenshot) and **Input Monitoring** (the hotkey). `/appshot permissions` raises the system prompts.
 
+## Privacy
+
+appshot has no server and collects nothing. The screenshots and window text it captures are stored only on your Mac, in `~/.claude/appshot/`, and reach Anthropic only as part of the Claude Code conversation you send them in, under your own Claude account and its terms. You can delete `~/.claude/appshot/` at any time. Questions: [open an issue](https://github.com/mareksulik/appshot/issues).
+
 ## What appshot runs, stores and sends
 
 Everything stays on your Mac. appshot makes **no network requests** and sends nothing anywhere except into your own Claude Code conversation, and only when you submit a prompt with an appshot attached.
