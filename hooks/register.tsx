@@ -137,12 +137,12 @@ function thumbHeight(thumb: Thumb): number {
 
 function imageSvg(thumb: Thumb): string {
   const w = CARD_WIDTH
-  const h = thumbHeight(thumb)
+  const height = thumbHeight(thumb)
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">`,
-    `<clipPath id="r"><rect width="${w}" height="${h}" rx="6"/></clipPath>`,
-    `<image href="data:image/jpeg;base64,${thumb.jpeg}" width="${w}" height="${h}" clip-path="url(#r)" preserveAspectRatio="xMidYMid slice"/>`,
-    `<rect x="0.5" y="0.5" width="${w - 1}" height="${h - 1}" rx="6" fill="none" stroke="#8e8e93" stroke-opacity="0.35"/>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${height}" width="${w}" height="${height}">`,
+    `<clipPath id="r"><rect width="${w}" height="${height}" rx="6"/></clipPath>`,
+    `<image href="data:image/jpeg;base64,${thumb.jpeg}" width="${w}" height="${height}" clip-path="url(#r)" preserveAspectRatio="xMidYMid slice"/>`,
+    `<rect x="0.5" y="0.5" width="${w - 1}" height="${height - 1}" rx="6" fill="none" stroke="#8e8e93" stroke-opacity="0.35"/>`,
     '</svg>',
   ].join('')
 }

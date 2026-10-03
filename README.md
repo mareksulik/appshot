@@ -41,6 +41,34 @@ Everything stays on your Mac. appshot makes **no network requests** and sends no
 
 The window text and screenshot can contain anything that window shows, including private information, so take an appshot only of windows you mean to share with Claude.
 
+## How the mod works, call by call
+
+**Events it hooks** (`hooks/register.tsx`):
+
+- `session.start`: registers `/appshot`, marks the session active, takes over recent unsent appshots in a brand-new session, starts the helper.
+- `session.end`: stops the helper.
+- `prompt.submit`: marks the session active and adds the pending appshots to the prompt as context (the `<appshot>` block described above). It does not change the text you typed.
+- `command.run`: answers `/appshot` and its subcommands.
+- `ui.render` on `AbovePrompt`: draws the thumbnails above the prompt.
+
+**Programs it starts**, all local, with these purposes only:
+
+| Program | Why |
+| --- | --- |
+| `swiftc` | Compile the bundled `helper/appshot.swift` |
+| `~/.claude/appshot/bin/appshot` | The compiled helper: hotkey, screenshot, window text |
+| `mkdir` | Create `~/.claude/appshot/bin` and `shots` |
+| `sips`, `base64` | Make the thumbnail of a screenshot |
+| `afplay` | Play the chosen macOS system sound from `/System/Library` |
+| `open` | Show a screenshot in Preview when you click 🔍 |
+| `rm -f` | Delete an appshot's pending record once it is sent or dropped |
+
+**Files it writes**, all inside `~/.claude/appshot/`: the helper binary, screenshots and thumbnails, `pending/<id>.json` (one per unsent appshot), `active` (the id of the session that should receive the next appshot) and `sessions/<id>` (the helper's process id). None of them is a settings, build or instructions file of another tool.
+
+**Prompts it submits.** Only with `/appshot send` turned on, a hotkey appshot submits the prompt "Here's an appshot of my <app> — <window title> window." on your behalf, with that appshot attached as context. The mod submits no other prompts.
+
+**Where data goes.** The only way data leaves the mod is the prompt context above, into your own Claude conversation. The mod and its helper open no network connections.
+
 ## License
 
 MIT
