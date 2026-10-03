@@ -1,0 +1,4 @@
+.DS_Store
+.claude/
+.claude-plugin/types/
+tsconfig.json
